@@ -23,9 +23,18 @@ def zombie_animation():
     zombie_surf = zombie_frames[int(zombie_frame_index) % 2]
 
 def display_score():
+    curr = round(pygame.time.get_ticks()/100) - count
+    time = 31 - curr
     global hit_score, miss_score
     score_surf = text_font.render(f'Hit: {hit_score}', False, (64, 64, 64))
-    score_rect = score_surf.get_rect()
+    score_rect = score_surf.get_rect(topleft = (20, 20))
+    miss_surf = text_font.render(f'Miss: {miss_score}', False, (64, 64, 64))
+    miss_rect = miss_surf.get_rect(topleft = (20, 70))
+    time_surf = text_font.render(f'Timer: {time}', False, (64, 64, 64))
+    time_rect = time_surf.get_rect(topleft = (20, 120))
+    screen.blit(score_surf, score_rect)
+    screen.blit(miss_surf, miss_rect)
+    screen.blit(time_surf, time_rect)
 
 pygame.init()
 
@@ -56,6 +65,15 @@ clock = pygame.time.Clock()
 
 hit = False
 
+count = 0
+
+bg_music = pygame.mixer.Sound('audio/music.wav')
+bg_music.set_volume(0.5)
+bg_music.play(loops = -1)
+
+hit_music = pygame.mixer.Sound('audio/jump.mp3')
+hit_music.set_volume(0.2)
+
 # Zombie timer
 zombie_rotate_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(zombie_rotate_timer, 400)
@@ -70,23 +88,32 @@ while True:
             exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
             if zombie_rect.collidepoint(event.pos):
-                hit = True
+                hit_score += 1
+                hit_music.play()
                 pos_list = [(100, 250), (250, 120), (400, 250), (550, 120), (700, 250)]
                 pos_list.remove(zombie_rect.center)
                 zombie_rect = zombie_surf.get_rect(center = choice(pos_list))
-            else: print('miss!')
+                pygame.time.set_timer(zombie_timer, 3000)
+                count = round(pygame.time.get_ticks()/100)
+            else: miss_score += 1
         if event.type == zombie_rotate_timer:
             if zombie_frame_index == 0: zombie_frame_index = 1
             else: zombie_frame_index = 0
             zombie_surf = zombie_frames[zombie_frame_index]
+        # if event.type == zombie_timer:
+        #     if hit == False:
+        #         miss_score += 1
+        #         pos_list = [(100, 250), (250, 120), (400, 250), (550, 120), (700, 250)]
+        #         pos_list.remove(zombie_rect.center)
+        #         zombie_rect = zombie_surf.get_rect(center = choice(pos_list))
+        #     else: hit = False
         if event.type == zombie_timer:
-            if hit == False:
-                pos_list = [(100, 250), (250, 120), (400, 250), (550, 120), (700, 250)]
-                pos_list.remove(zombie_rect.center)
-                zombie_rect = zombie_surf.get_rect(center = choice(pos_list))
-            else: hit = False
-
-
+            miss_score += 1
+            pos_list = [(100, 250), (250, 120), (400, 250), (550, 120), (700, 250)]
+            pos_list.remove(zombie_rect.center)
+            zombie_rect = zombie_surf.get_rect(center = choice(pos_list))
+            count = round(pygame.time.get_ticks()/100)
+            
     screen.fill((94, 129, 162))
     hole1 = pygame.draw.ellipse(screen, 'Black', pygame.Rect(50, 200, 100, 100))
     hole2 = pygame.draw.ellipse(screen, 'Black', pygame.Rect(200, 70, 100, 100))
@@ -96,6 +123,7 @@ while True:
     # hole6 = pygame.draw.ellipse(screen, 'Black', pygame.Rect(750, 200, 100, 100))
 
     screen.blit(zombie_surf, zombie_rect)
+    display_score()
 
     pygame.display.update()
     clock.tick(60)
